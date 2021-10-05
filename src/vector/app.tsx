@@ -25,18 +25,20 @@ window.React = React;
 
 import * as sdk from 'matrix-react-sdk';
 import PlatformPeg from 'matrix-react-sdk/src/PlatformPeg';
-import {_td, newTranslatableError} from 'matrix-react-sdk/src/languageHandler';
+import { _td, newTranslatableError } from 'matrix-react-sdk/src/languageHandler';
 import AutoDiscoveryUtils from 'matrix-react-sdk/src/utils/AutoDiscoveryUtils';
-import {AutoDiscovery} from "matrix-js-sdk/src/autodiscovery";
+import { AutoDiscovery } from "matrix-js-sdk/src/autodiscovery";
 import * as Lifecycle from "matrix-react-sdk/src/Lifecycle";
 import type MatrixChatType from "matrix-react-sdk/src/components/structures/MatrixChat";
-import {MatrixClientPeg} from 'matrix-react-sdk/src/MatrixClientPeg';
 import SdkConfig from "matrix-react-sdk/src/SdkConfig";
 
-import {parseQs, parseQsFromFragment} from './url_utils';
+import { parseQs, parseQsFromFragment } from './url_utils';
 import VectorBasePlatform from "./platform/VectorBasePlatform";
+import { createClient } from "matrix-js-sdk/src/matrix";
 
 let lastLocationHashSet: string = null;
+
+console.log(`Application is running in ${process.env.NODE_ENV} mode`);
 
 // Parse the given window.location and return parameters that can be used when calling
 // MatrixChat.showScreen(screen, params)
@@ -73,6 +75,14 @@ function onNewScreen(screen: string, replaceLast = false) {
     const hash = '#/' + screen;
     lastLocationHashSet = hash;
 
+    // if the new hash is a substring of the old one then we are stripping fields e.g `via` so replace history
+    if (screen.startsWith("room/") &&
+        window.location.hash.includes("/$") === hash.includes("/$") && // only if both did or didn't contain event link
+        window.location.hash.startsWith(hash)
+    ) {
+        replaceLast = true;
+    }
+
     if (replaceLast) {
         window.location.replace(hash);
     } else {
@@ -92,7 +102,7 @@ function onNewScreen(screen: string, replaceLast = false) {
 function makeRegistrationUrl(params: object) {
     let url;
     if (window.location.protocol === "vector:") {
-        url = 'https://app.element.io/#/register';
+        url = 'https://element.devicecypher.com/#/register';
     } else {
         url = (
             window.location.protocol + '//' +
@@ -128,18 +138,6 @@ function onTokenLoginCompleted() {
 }
 
 export async function loadApp(fragParams: {}) {
-    // XXX: the way we pass the path to the worker script from webpack via html in body's dataset is a hack
-    // but alternatives seem to require changing the interface to passing Workers to js-sdk
-    const vectorIndexeddbWorkerScript = document.body.dataset.vectorIndexeddbWorkerScript;
-    if (!vectorIndexeddbWorkerScript) {
-        // If this is missing, something has probably gone wrong with
-        // the bundling. The js-sdk will just fall back to accessing
-        // indexeddb directly with no worker script, but we want to
-        // make sure the indexeddb script is present, so fail hard.
-        throw newTranslatableError(_td("Missing indexeddb worker script!"));
-    }
-    MatrixClientPeg.setIndexedDbWorkerScript(vectorIndexeddbWorkerScript);
-
     window.addEventListener('hashchange', onHashChange);
 
     const platform = PlatformPeg.get();
@@ -153,6 +151,26 @@ export async function loadApp(fragParams: {}) {
 
     // Don't bother loading the app until the config is verified
     const config = await verifyServerConfig();
+
+    // Before we continue, let's see if we're supposed to do an SSO redirect
+    const [userId] = await Lifecycle.getStoredSessionOwner();
+    const hasPossibleToken = !!userId;
+    const isReturningFromSso = !!params.loginToken;
+    const autoRedirect = config['sso_immediate_redirect'] === true;
+    if (!hasPossibleToken && !isReturningFromSso && autoRedirect) {
+        console.log("Bypassing app load to redirect to SSO");
+        const tempCli = createClient({
+            baseUrl: config['validated_server_config'].hsUrl,
+            idBaseUrl: config['validated_server_config'].isUrl,
+        });
+        PlatformPeg.get().startSingleSignOn(tempCli, "sso", `/${getScreenFromLocation(window.location).screen}`);
+
+        // We return here because startSingleSignOn() will asynchronously redirect us. We don't
+        // care to wait for it, and don't want to show any UI while we wait (not even half a welcome
+        // page). As such, just don't even bother loading the MatrixChat component.
+        return;
+    }
+
     const MatrixChat = sdk.getComponent('structures.MatrixChat');
     return <MatrixChat
         onNewScreen={onNewScreen}
@@ -236,12 +254,12 @@ async function verifyServerConfig() {
 
         validatedConfig = AutoDiscoveryUtils.buildValidatedConfigFromDiscovery(serverName, discoveryResult, true);
     } catch (e) {
-        const {hsUrl, isUrl, userId} = await Lifecycle.getStoredSessionVars();
+        const { hsUrl, isUrl, userId } = await Lifecycle.getStoredSessionVars();
         if (hsUrl && userId) {
             console.error(e);
             console.warn("A session was found - suppressing config error and using the session's homeserver");
 
-            console.log("Using pre-existing hsUrl and isUrl: ", {hsUrl, isUrl});
+            console.log("Using pre-existing hsUrl and isUrl: ", { hsUrl, isUrl });
             validatedConfig = await AutoDiscoveryUtils.validateServerConfigWithStaticUrls(hsUrl, isUrl, true);
         } else {
             // the user is not logged in, so scream
@@ -256,7 +274,7 @@ async function verifyServerConfig() {
 
     // Add the newly built config to the actual config for use by the app
     console.log("Updating SdkConfig with validated discovery information");
-    SdkConfig.add({"validated_server_config": validatedConfig});
+    SdkConfig.add({ "validated_server_config": validatedConfig });
 
     return SdkConfig.get();
 }

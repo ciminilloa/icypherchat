@@ -19,8 +19,8 @@ limitations under the License.
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import olmWasmPath from "olm/olm.wasm";
-import Olm from 'olm';
+import olmWasmPath from "@matrix-org/olm/olm.wasm";
+import Olm from '@matrix-org/olm';
 import * as ReactDOM from "react-dom";
 import * as React from "react";
 
@@ -31,10 +31,9 @@ import PWAPlatform from "./platform/PWAPlatform";
 import WebPlatform from "./platform/WebPlatform";
 import PlatformPeg from "matrix-react-sdk/src/PlatformPeg";
 import SdkConfig from "matrix-react-sdk/src/SdkConfig";
-import {setTheme} from "matrix-react-sdk/src/theme";
+import { setTheme } from "matrix-react-sdk/src/theme";
 
-import { initRageshake } from "./rageshakesetup";
-
+import { initRageshake, initRageshakeStore } from "./rageshakesetup";
 
 export const rageshakePromise = initRageshake();
 
@@ -49,6 +48,14 @@ export function preparePlatform() {
         console.log("Using Web platform");
         PlatformPeg.set(new WebPlatform());
     }
+}
+
+export function setupLogStorage() {
+    if (SdkConfig.get().bug_report_endpoint_url) {
+        return initRageshakeStore();
+    }
+    console.warn("No bug report endpoint set - logs will not be persisted");
+    return Promise.resolve();
 }
 
 export async function loadConfig() {

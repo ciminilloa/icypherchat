@@ -16,15 +16,10 @@ limitations under the License.
 */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import SdkConfig from 'matrix-react-sdk/src/SdkConfig';
 
 export default class VectorAuthHeaderLogo extends React.PureComponent {
-    static replaces = 'AuthHeaderLogo'
-
-    static propTypes = {
-        icon: PropTypes.string,
-    }
+    static replaces = 'AuthHeaderLogo';
 
     render() {
         const brandingConfig = SdkConfig.get().branding;
@@ -35,7 +30,7 @@ export default class VectorAuthHeaderLogo extends React.PureComponent {
 
         return (
             <div className="mx_AuthHeaderLogo">
-                <img src={logoUrl} alt="Element" />
+                <img src={logoUrl} alt="iCYPHER Chat" />
             </div>
         );
     }

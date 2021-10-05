@@ -7,7 +7,7 @@
     "Decentralised, encrypted chat &amp; collaboration powered by [matrix]": "Messagerie et collaboration décentralisées et chiffrées, propulsées par [matrix]",
     "Sign In": "Se connecter",
     "Create Account": "Créer un compte",
-    "Explore rooms": "Explorer les salons",
+    "Explore rooms": "Parcourir les salons",
     "Unexpected error preparing the app. See console for details.": "Une erreur inattendue est survenue pendant la préparation de l’application. Consultez la console pour avoir des détails.",
     "Invalid configuration: can only specify one of default_server_config, default_server_name, or default_hs_url.": "Configuration invalide : il ne faut spécifier qu’un des trois champs parmis default_server_config, default_server_name et default_hs_url.",
     "Invalid configuration: no default server specified.": "Configuration invalide : aucun serveur par défaut spécifié.",
@@ -32,5 +32,7 @@
     "Your Element configuration contains invalid JSON. Please correct the problem and reload the page.": "La configuration de votre Element contient du JSON invalide. Veuillez corriger le problème et recharger la page.",
     "Your browser can't run %(brand)s": "Votre navigateur ne peut pas exécuter %(brand)s",
     "%(brand)s uses advanced browser features which aren't supported by your current browser.": "%(brand)s nécessite des fonctionnalités avancées que votre navigateur actuel ne prend pas en charge.",
-    "Powered by Matrix": "Propulsé par Matrix"
+    "Powered by Matrix": "Propulsé par Matrix",
+    "Use %(brand)s on mobile": "Utiliser %(brand)s sur téléphone",
+    "Switch to space by number": "Afficher un espace par son numéro"
 }

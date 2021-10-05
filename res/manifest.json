@@ -1,6 +1,6 @@
 {
-    "name": "Element",
-    "short_name": "Element",
+    "name": "iCYPHER Chat",
+    "short_name": "iCYPHER Chat",
     "display": "standalone",
     "theme_color": "#76CFA6",
     "start_url": "index.html",

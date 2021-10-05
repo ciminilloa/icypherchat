@@ -25,8 +25,17 @@ require('gfm.css/gfm.css');
 require('highlight.js/styles/github.css');
 require('katex/dist/katex.css');
 
+/**
+ * This require is necessary only for purposes of CSS hot-reload, as otherwise
+ * webpack has some incredible problems figuring out which CSS files should be
+ * hot-reloaded, even with proper hints for the loader.
+ *
+ * On production build it's going to be an empty module, so don't worry about that.
+ */
+require('./devcss');
+require('./localstorage-fix');
 // These are things that can run before the skin loads - be careful not to reference the react-sdk though.
-import {parseQsFromFragment} from "./url_utils";
+import { parseQsFromFragment } from "./url_utils";
 import './modernizr';
 
 async function settled(...promises: Array<Promise<any>>) {
@@ -51,6 +60,9 @@ function checkBrowserFeatures() {
     // ES2018: http://262.ecma-international.org/9.0/#sec-promise.prototype.finally
     window.Modernizr.addTest("promiseprototypefinally", () =>
         typeof window.Promise?.prototype?.finally === "function");
+    // ES2020: http://262.ecma-international.org/#sec-promise.allsettled
+    window.Modernizr.addTest("promiseallsettled", () =>
+        typeof window.Promise?.allSettled === "function");
     // ES2018: https://262.ecma-international.org/9.0/#sec-get-regexp.prototype.dotAll
     window.Modernizr.addTest("regexpdotall", () => (
         window.RegExp?.prototype &&
@@ -92,6 +104,7 @@ async function start() {
     // load init.ts async so that its code is not executed immediately and we can catch any exceptions
     const {
         rageshakePromise,
+        setupLogStorage,
         preparePlatform,
         loadOlm,
         loadConfig,
@@ -138,6 +151,9 @@ async function start() {
         await settled(loadConfigPromise); // wait for it to settle
         // keep initialising so that we can show any possible error with as many features (theme, i18n) as possible
 
+        // now that the config is ready, try to persist logs
+        const persistLogsPromise = setupLogStorage();
+
         // Load language after loading config.json so that settingsDefaults.language can be applied
         const loadLanguagePromise = loadLanguage();
         // as quickly as we possibly can, set a default theme...
@@ -155,19 +171,23 @@ async function start() {
         // ##########################
         // error handling begins here
         // ##########################
+        /*
         if (!acceptBrowser) {
             await new Promise<void>(resolve => {
                 console.error("Browser is missing required features.");
                 // take to a different landing page to AWOOOOOGA at the user
+                
                 showIncompatibleBrowser(() => {
-                    if (window.localStorage) {
+                    if (window.localStorage || !window.localStorage) {
                         window.localStorage.setItem('mx_accepts_unsupported_browser', String(true));
                     }
                     console.log("User accepts the compatibility risks.");
                     resolve();
                 });
+
             });
         }
+        */
 
         try {
             // await config here
@@ -176,9 +196,9 @@ async function start() {
             // Now that we've loaded the theme (CSS), display the config syntax error if needed.
             if (error.err && error.err instanceof SyntaxError) {
                 // This uses the default brand since the app config is unavailable.
-                return showError(_t("Your Element is misconfigured"), [
-                    _t("Your Element configuration contains invalid JSON. " +
-                        "Please correct the problem and reload the page."),
+                return showError("Your iCYPHER Chat is misconfigured", [
+                    "Your iCYPHER Chat configuration contains invalid JSON. " +
+                        "Please correct the problem and reload the page.",
                     _t(
                         "The message from the parser is: %(message)s",
                         { message: error.err.message || _t("Invalid JSON") },
@@ -197,6 +217,11 @@ async function start() {
         await loadThemePromise;
         await loadLanguagePromise;
 
+        // We don't care if the log persistence made it through successfully, but we do want to
+        // make sure it had a chance to load before we move on. It's prepared much higher up in
+        // the process, making this the first time we check that it did something.
+        await settled(persistLogsPromise);
+
         // Finally, load the app. All of the other react-sdk imports are in this file which causes the skinner to
         // run on the components.
         await loadApp(fragparts.params);
@@ -204,7 +229,7 @@ async function start() {
         console.error(err);
         // Like the compatibility page, AWOOOOOGA at the user
         // This uses the default brand since the app config is unavailable.
-        await showError(_t("Your Element is misconfigured"), [
+        await showError("Your iCYPHER Chat is misconfigured", [
             err.translatedMessage || _t("Unexpected error preparing the app. See console for details."),
         ]);
     }

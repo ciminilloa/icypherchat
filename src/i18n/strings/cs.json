@@ -2,7 +2,7 @@
     "Welcome to Element": "Vítá vás Element",
     "Unknown device": "Neznámé zařízení",
     "You need to be using HTTPS to place a screen-sharing call.": "Pro uskutečnění hovoru se sdílením obrazovky musíte používat HTTPS.",
-    "Dismiss": "Zahodit",
+    "Dismiss": "Zavřít",
     "powered by Matrix": "používá protokol Matrix",
     "Decentralised, encrypted chat &amp; collaboration powered by [matrix]": "Decentralizovaný, šifrovaný chat a spolupráce na platformě [matrix]",
     "Sign In": "Přihlásit se",
@@ -32,5 +32,7 @@
     "Failed to start": "Nepovedlo se nastartovat",
     "Powered by Matrix": "Běží na Matrixu",
     "%(brand)s Desktop (%(platformName)s)": "%(brand)s pro desktopový počítač (%(platformName)s)",
-    "Missing indexeddb worker script!": "Nenačetl se skript spravující indexdb!"
+    "Missing indexeddb worker script!": "Nenačetl se skript spravující indexdb!",
+    "Use %(brand)s on mobile": "Používání %(brand)s v mobilních zařízeních",
+    "Switch to space by number": "Přepnout na prostor podle čísla"
 }
